@@ -1,0 +1,146 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAS in Blockchain 2023 Spring Edition</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="{% static 'web3.min.js' %}"></script> <!-- Ensure this path points to your web3.min.js file -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!-- Add any other scripts or styles here -->
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <a class="navbar-brand" href="#">DappTweet.io</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="{% url 'homepage' %}">Home Page</a></li>
+                    </ul>
+                </div>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Original Main Content Start -->
+        <h1></h1>
+        <br/><br/>
+        <label for="inputData">Message:</label>
+        <textarea id="inputData" name="inputData" class="form-control" rows="3"></textarea>
+        <button id="createTransactionBtn" class="btn btn-primary mt-2">Publish Tweet</button>
+        <br/><br/>
+        <br/><br/>
+        <form action="{% url 'transaction_detail' %}" method="POST">
+            {% csrf_token %}
+            <label for="transaction_hash">TX Hash:</label>
+            <input id="transaction_hash" name="transaction_hash" required="" type="text" class="form-control"/>
+            <button type="submit" class="btn btn-secondary mt-2">Retrieve Message</button>
+        </form>
+        <!-- Original Main Content End -->
+    </div>
+
+    <footer class="footer bg-light mt-4">
+        <div class="container text-center">
+            <span class="text-muted">© 2023 Ahmad Abtahi , Reza Abtahi</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    
+    <script>
+        const createTransactionBtn = document.getElementById('createTransactionBtn');
+        const inputDataBox = document.getElementById('inputData');
+        
+        createTransactionBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                // Request account access if needed
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Create Web3 instance
+                const web3 = new Web3(window.ethereum);
+
+                // Get user's address
+                const accounts = await web3.eth.getAccounts();
+                const userAddress = accounts[0];
+                
+                // Get text from the texbox as an input for transaction
+                const inputText = inputDataBox.value;
+
+                // Define the transaction parameters
+                const txParams = {
+                    from: userAddress,
+                    to: '0x7771EB3f567E7e98a6191B3cb46dB7633E5B4132', // Replace 'RECIPIENT_ADDRESS' with the actual recipient's address
+                    value: web3.utils.toWei('0.01', 'ether'),
+                    gas: 210000,
+                    gasPrice: web3.utils.toWei('500', 'gwei'),
+                    data: web3.utils.toHex(inputText)
+                };
+
+                // Send the transaction
+                web3.eth.sendTransaction(txParams, (err, transactionHash) => {
+                    if (err) {
+                        console.error('Error:', err);
+                    } else {
+                        console.log('Transaction Hash:', transactionHash);
+                    }
+                });
+            } else {
+                alert('MetaMask is not installed. Please install MetaMask and try again.');
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById('sendDMBtn').addEventListener('click', function() {
+            var message = document.getElementById('dmMessage').value;
+            var twitterId = document.getElementById('twitterId').value;
+
+            fetch('/send_direct_message', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),  // Add CSRF token for security
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `message=${encodeURIComponent(message)}&twitter_id=${encodeURIComponent(twitterId)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert('Success: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        });
+
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+</body>
+</html>
